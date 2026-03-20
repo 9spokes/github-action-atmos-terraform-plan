@@ -27,6 +27,9 @@ inputs:
     description: "If set atmos will upload the plan result to the pro API"
     required: false
     default: 'false'
+  atmos-profile:
+    description: "Activate configuration profile"
+    required: false
   atmos-version:
     description: The version of atmos to install
     required: false
@@ -329,6 +332,7 @@ runs:
       shell: bash
       env:
         ATMOS_PRO_BASE_URL: ${{ inputs.atmos-pro-base-url }}
+        ATMOS_PROFILE: ${{ inputs.atmos-profile }}
         TFCMT_GITHUB_TOKEN: ${{ inputs.token }}
       run: |
         # Verify tfcmt is installed
