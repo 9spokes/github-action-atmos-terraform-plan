@@ -257,17 +257,17 @@ runs:
         AQUA_CONFIG: aqua.yaml
         AQUA_LOG_LEVEL: debug
 
-    - name: Configure Plan AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      if: ${{ fromJson(steps.atmos-settings.outputs.settings).aws-region != '' &&
-        fromJson(steps.atmos-settings.outputs.settings).aws-region != 'null' &&
-        fromJson(steps.atmos-settings.outputs.settings).terraform-plan-role != '' &&
-        fromJson(steps.atmos-settings.outputs.settings).terraform-plan-role != 'null' }}
-      with:
-        aws-region: ${{ fromJson(steps.atmos-settings.outputs.settings).aws-region }}
-        role-to-assume: ${{ fromJson(steps.atmos-settings.outputs.settings).terraform-plan-role }}
-        role-session-name: "atmos-terraform-plan-gitops"
-        mask-aws-account-id: "no"
+#    - name: Configure Plan AWS Credentials
+#      uses: aws-actions/configure-aws-credentials@v4
+#      if: ${{ fromJson(steps.atmos-settings.outputs.settings).aws-region != '' &&
+#        fromJson(steps.atmos-settings.outputs.settings).aws-region != 'null' &&
+#        fromJson(steps.atmos-settings.outputs.settings).terraform-plan-role != '' &&
+#        fromJson(steps.atmos-settings.outputs.settings).terraform-plan-role != 'null' }}
+#      with:
+#        aws-region: ${{ fromJson(steps.atmos-settings.outputs.settings).aws-region }}
+#        role-to-assume: ${{ fromJson(steps.atmos-settings.outputs.settings).terraform-plan-role }}
+#        role-session-name: "atmos-terraform-plan-gitops"
+#        mask-aws-account-id: "no"
 
     - name: Set atmos cli base path vars
       if: ${{ fromJson(steps.atmos-settings.outputs.settings).github-actions-enabled || fromJson(steps.atmos-settings.outputs.settings).atmos-pro-enabled }}
