@@ -335,6 +335,9 @@ runs:
         ATMOS_PRO_BASE_URL: ${{ inputs.atmos-pro-base-url }}
         ATMOS_PROFILE: ${{ inputs.atmos-profile }}
         TFCMT_GITHUB_TOKEN: ${{ inputs.token }}
+        AWS_WEB_IDENTITY_TOKEN_FILE: ""
+        AWS_ROLE_ARN: ""
+        AWS_ROLE_SESSION_NAME: ""
       run: |
         # Verify tfcmt is installed
         # Since we disable exit on error, the real error will be swallowed later on
@@ -366,7 +369,7 @@ runs:
         fi
         
         atmos auth list ${base_cmd}
-        atmos auth list ${base_cmd} --identity core-artifacts/terraform
+        atmos auth whoami ${base_cmd} --identity core-artifacts/terraform
 
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
