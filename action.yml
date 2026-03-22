@@ -355,6 +355,9 @@ runs:
         if [[ -n "${{ inputs.identity }}" ]]; then
           base_cmd+=" --identity=${{ inputs.identity }}"
         fi
+        if [[ -n "${{ inputs.atmos-profile }}" ]]; then
+          base_cmd+=" --profile=${{ inputs.atmos-profile }}"
+        fi
 
         atmos_pro_flags=""
 
