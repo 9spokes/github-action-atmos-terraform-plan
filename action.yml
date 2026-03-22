@@ -335,9 +335,6 @@ runs:
         ATMOS_PRO_BASE_URL: ${{ inputs.atmos-pro-base-url }}
         ATMOS_PROFILE: ${{ inputs.atmos-profile }}
         TFCMT_GITHUB_TOKEN: ${{ inputs.token }}
-        AWS_WEB_IDENTITY_TOKEN_FILE: ""
-        AWS_ROLE_ARN: ""
-        AWS_ROLE_SESSION_NAME: ""
       run: |
         # Verify tfcmt is installed
         # Since we disable exit on error, the real error will be swallowed later on
@@ -371,26 +368,7 @@ runs:
         atmos auth list ${base_cmd}
         atmos auth whoami ${base_cmd} --identity core-artifacts/terraform
 
-        tfcmt \
-        --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
-        -owner "${{ github.repository_owner }}" \
-        -repo "${{ github.event.repository.name }}" \
-        -var "target:${{ steps.vars.outputs.component_slug }}" \
-        -var "component:${{ inputs.component }}" \
-        -var "componentPath:${{ steps.vars.outputs.component_path }}" \
-        -var "commitSHA:${{ inputs.sha }}" \
-        -var "stack:${{ inputs.stack }}" \
-        -var "job:${{ github.job }}" \
-        -var "logoImage:${{ inputs.branding-logo-image }}" \
-        -var "logoUrl:${{ inputs.branding-logo-url }}" \
-        -var "infracost_enabled:${{ fromJson(steps.atmos-settings.outputs.settings).enable-infracost }}" \
-        -var "driftModeEnabled:${{ inputs.drift-detection-mode-enabled }}" \
-        $([[ "${{ inputs.pr-comment }}" == "false" ]] && echo "--output ${{ steps.vars.outputs.summary_file }}") \
-        --log-level $([[ "${{ inputs.debug }}" == "true" ]] && echo "DEBUG" || echo "INFO") \
-        plan \
-        $([[ "${{ inputs.pr-comment }}" == "true" ]] && echo "-patch") \
-        -- \
-          atmos auth list ${base_cmd}
+        unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
 
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
