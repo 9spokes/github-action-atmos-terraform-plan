@@ -366,7 +366,7 @@ runs:
         fi
         
         atmos auth list ${base_cmd}
-        atmos auth list ${base_cmd} --identity core-artifacts/terraform
+        atmos auth whoami ${base_cmd} --identity core-artifacts/terraform
 
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
