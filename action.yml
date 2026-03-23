@@ -367,16 +367,6 @@ runs:
 
         rm -rf ~/.config/atmos/nsp/
         
-        atmos auth list ${base_cmd}
-
-        echo "=== Direct credential file test ==="
-        unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
-        export AWS_PROFILE=core-artifacts/terraform
-        export AWS_SHARED_CREDENTIALS_FILE=/home/runner/.config/atmos/nsp/aws/github-oidc/credentials
-        export AWS_CONFIG_FILE=/home/runner/.config/atmos/nsp/aws/github-oidc/config
-        export AWS_EC2_METADATA_DISABLED=true
-        aws sts get-caller-identity 2>&1 || true
-
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
         -owner "${{ github.repository_owner }}" \
