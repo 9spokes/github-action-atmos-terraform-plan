@@ -373,8 +373,17 @@ runs:
         echo "=== AWS env vars ==="
         env | grep -i AWS_ | sort
         echo "=== Atmos credential files ==="
-        ls -la ~/.config/atmos/aws/ 2>/dev/null || echo "No atmos credential dir"
-        cat ~/.config/atmos/aws/*/credentials 2>/dev/null || echo "No credentials file"
+        ls -la ~/.config/atmos/nsp/aws/ 2>/dev/null || echo "No atmos credential dir"
+        cat ~/.config/atmos/nsp/aws/*/credentials 2>/dev/null || echo "No credentials file"
+        
+        echo "=== AWS env vars ==="
+        env | grep -i AWS_ | sort
+
+        echo "=== Atmos credential files (with realm) ==="
+        find ~/.config/atmos/ -type f 2>/dev/null || echo "No atmos config dir at all"
+
+        echo "=== Atmos keyring ==="
+        find ~/.atmos/ -type f 2>/dev/null || echo "No ~/.atmos dir"
 
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
