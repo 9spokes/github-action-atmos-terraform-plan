@@ -122,7 +122,6 @@ runs:
         chmod +x $HOME/atmos
         echo "$HOME" >> $GITHUB_PATH
         export ATMOS_CLI_PATH=$HOME/atmos
-        $HOME/atmos version
 
     - name: Get atmos settings
       id: atmos-settings
@@ -373,6 +372,9 @@ runs:
         if [[ "${{ inputs.atmos-pro-upload-status }}" == "true" ]]; then
           atmos_pro_flags+="--upload-status"
         fi
+
+        which atmos
+        atmos version
 
         #rm -rf ~/.config/atmos/nsp/
         unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
