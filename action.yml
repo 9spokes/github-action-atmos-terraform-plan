@@ -403,6 +403,14 @@ runs:
         echo "=== Config file content ==="
         cat /home/runner/.config/atmos/nsp/aws/github-oidc/config
 
+        echo "=== Definitive test: what identity does atmos subprocess see? ==="
+        atmos auth exec ${base_cmd} --identity core-artifacts/terraform -- aws sts get-caller-identity 2>&1 || true
+
+        echo "=== Test: what env does terraform get? ==="
+        atmos auth exec ${base_cmd} --identity core-artifacts/terraform -- env | grep -E "^AWS_" | sort
+
+        export TF_LOG=TRACE
+
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
         -owner "${{ github.repository_owner }}" \
