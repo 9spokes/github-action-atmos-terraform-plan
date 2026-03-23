@@ -403,11 +403,13 @@ runs:
         echo "=== Config file content ==="
         cat /home/runner/.config/atmos/nsp/aws/github-oidc/config
 
-        echo "=== Definitive test: what identity does atmos subprocess see? ==="
-        atmos auth exec ${base_cmd} --identity core-artifacts/terraform -- aws sts get-caller-identity 2>&1 || true
-
-        echo "=== Test: what env does terraform get? ==="
-        atmos auth exec ${base_cmd} --identity core-artifacts/terraform -- env | grep -E "^AWS_" | sort
+        echo "=== Direct credential file test ==="
+        unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
+        export AWS_PROFILE=core-artifacts/terraform
+        export AWS_SHARED_CREDENTIALS_FILE=/home/runner/.config/atmos/nsp/aws/github-oidc/credentials
+        export AWS_CONFIG_FILE=/home/runner/.config/atmos/nsp/aws/github-oidc/config
+        export AWS_EC2_METADATA_DISABLED=true
+        aws sts get-caller-identity 2>&1 || true
 
         export TF_LOG=TRACE
 
