@@ -375,6 +375,7 @@ runs:
         fi
 
         #rm -rf ~/.config/atmos/nsp/
+        unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
         
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
