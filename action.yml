@@ -107,13 +107,23 @@ runs:
       run: |-
         echo "ATMOS_CLI_CONFIG_PATH=$(realpath ${{ inputs.atmos-config-path }})" >> $GITHUB_ENV
 
-    - name: Install Atmos
-      if: ${{ inputs.atmos-version != '' }}
-      uses: cloudposse/github-action-setup-atmos@v2
-      with:
-        atmos-version: ${{ inputs.atmos-version }}
-        token: ${{ inputs.token }}
-        install-wrapper: false
+#    - name: Install Atmos
+#      if: ${{ inputs.atmos-version != '' }}
+#      uses: cloudposse/github-action-setup-atmos@v2
+#      with:
+#        atmos-version: ${{ inputs.atmos-version }}
+#        token: ${{ inputs.token }}
+#        install-wrapper: false
+    - name: Build Atmos from fork
+      run: |
+        git clone https://github.com/9spokes/atmos.git /tmp/atmos
+        cd /tmp/atmos
+        git checkout fix_auth_chain
+        make build VERSION=1.209.0-fix-auth-cache
+#        sudo cp ./build/atmos /usr/local/bin/atmos
+        cp ./build/atmos ${HOME}/atmos
+        export ATMOS_CLI_PATH=${HOME}/atmos
+        ${HOME}/atmos version
 
     - name: Get atmos settings
       id: atmos-settings
@@ -365,7 +375,7 @@ runs:
           atmos_pro_flags+="--upload-status"
         fi
 
-        rm -rf ~/.config/atmos/nsp/
+        #rm -rf ~/.config/atmos/nsp/
         
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
