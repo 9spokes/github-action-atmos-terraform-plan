@@ -368,42 +368,6 @@ runs:
         rm -rf ~/.config/atmos/nsp/
         
         atmos auth list ${base_cmd}
-        atmos auth whoami ${base_cmd} --identity core-artifacts/terraform
-
-        unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
-
-        echo "=== AWS env vars ==="
-        env | grep -i AWS_ | sort
-        echo "=== Atmos credential files ==="
-        ls -la ~/.config/atmos/nsp/aws/ 2>/dev/null || echo "No atmos credential dir"
-        cat ~/.config/atmos/nsp/aws/*/credentials 2>/dev/null || echo "No credentials file"
-        
-        echo "=== AWS env vars ==="
-        env | grep -i AWS_ | sort
-
-        echo "=== Atmos credential files (with realm) ==="
-        find ~/.config/atmos/ -type f 2>/dev/null || echo "No atmos config dir at all"
-
-        echo "=== Atmos keyring ==="
-        find ~/.atmos/ -type f 2>/dev/null || echo "No ~/.atmos dir"
-
-        echo "=== Auth debug: running atmos with trace logging ==="
-        ATMOS_LOGS_LEVEL=Trace atmos terraform plan ${{ inputs.component }} \
-          --stack ${{ inputs.stack }} \
-          ${base_cmd} \
-          -out=/dev/null \
-          -lock=false \
-          -input=false \
-          -no-color 2>&1 | grep -iE "TerraformPreHook|auth.*skip|providers.*0|identities.*0|ComponentAuth|AWS_PROFILE|AWS_SHARED|Preparing AWS|Authenticating|post-auth|SetupFiles|WriteCredentials|credential environment" | head -30
-
-        echo "=== Generated backend config ==="
-        cat ./${{ steps.vars.outputs.component_path }}/backend.tf.json 2>/dev/null || echo "No backend.tf.json yet"
-
-        echo "=== Credential file content (masked) ==="
-        sed 's/\(aws_.*=\).*/\1 ***REDACTED***/' /home/runner/.config/atmos/nsp/aws/github-oidc/credentials
-
-        echo "=== Config file content ==="
-        cat /home/runner/.config/atmos/nsp/aws/github-oidc/config
 
         echo "=== Direct credential file test ==="
         unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
@@ -412,8 +376,6 @@ runs:
         export AWS_CONFIG_FILE=/home/runner/.config/atmos/nsp/aws/github-oidc/config
         export AWS_EC2_METADATA_DISABLED=true
         aws sts get-caller-identity 2>&1 || true
-
-        export TF_LOG=TRACE
 
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
