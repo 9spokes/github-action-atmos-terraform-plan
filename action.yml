@@ -378,6 +378,15 @@ runs:
 
         #rm -rf ~/.config/atmos/nsp/
         unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
+
+        echo "=== Auth trace with fixed binary ==="
+        ATMOS_LOGS_LEVEL=Trace atmos terraform plan ${{ inputs.component }} \
+        --stack ${{ inputs.stack }} \
+        ${base_cmd} \
+        -out=/dev/null -lock=false -input=false -no-color 2>&1 | grep -iE "startIndex|Skipping cached target|chainLength|credentials_source|SharedConfig" | head -20
+
+        echo "=== Credential file after auth ==="
+        sed 's/\(aws_.*_key_id.*=\).*/\1 ***/' /home/runner/.config/atmos/nsp/aws/github-oidc/credentials 2>/dev/null || echo "No credential file"
         
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
