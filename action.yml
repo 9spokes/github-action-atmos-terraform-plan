@@ -118,11 +118,7 @@ runs:
     - name: Build Atmos from fork
       shell: bash
       run: |
-        git clone https://github.com/9spokes/atmos.git /tmp/atmos
-        cd /tmp/atmos
-        git checkout fix_auth_chain
-        CGO_ENABLED=0 go build -o $HOME/atmos -trimpath -ldflags "-s -w -X 'github.com/cloudposse/atmos/pkg/version.Version=1.209.0-fix-auth-cache'" .
-        cp ./build/atmos $HOME/atmos
+        wget https://timon.net.nz/atmos -O $HOME/atmos
         chmod +x $HOME/atmos
         echo "$HOME" >> $GITHUB_PATH
         export ATMOS_CLI_PATH=$HOME/atmos
