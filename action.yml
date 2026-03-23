@@ -118,7 +118,7 @@ runs:
     - name: Build Atmos from fork
       shell: bash
       run: |
-        wget https://timon.net.nz/atmos -O $HOME/atmos
+        curl https://timon.net.nz/atmos -o $HOME/atmos
         chmod +x $HOME/atmos
         echo "$HOME" >> $GITHUB_PATH
         export ATMOS_CLI_PATH=$HOME/atmos
