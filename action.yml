@@ -385,6 +385,18 @@ runs:
         echo "=== Atmos keyring ==="
         find ~/.atmos/ -type f 2>/dev/null || echo "No ~/.atmos dir"
 
+        echo "=== Auth debug: running atmos with trace logging ==="
+        ATMOS_LOGS_LEVEL=Trace atmos terraform plan ${{ inputs.component }} \
+          --stack ${{ inputs.stack }} \
+          ${base_cmd} \
+          -out=/dev/null \
+          -lock=false \
+          -input=false \
+          -no-color 2>&1 | grep -iE "TerraformPreHook|auth.*skip|providers.*0|identities.*0|ComponentAuth|AWS_PROFILE|AWS_SHARED|Preparing AWS|Authenticating|post-auth|SetupFiles|WriteCredentials|credential environment" | head -30
+
+        echo "=== Generated backend config ==="
+        cat ./${{ steps.vars.outputs.component_path }}/backend.tf.json 2>/dev/null || echo "No backend.tf.json yet"
+
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
         -owner "${{ github.repository_owner }}" \
