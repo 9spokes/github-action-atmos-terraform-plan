@@ -370,6 +370,12 @@ runs:
 
         unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
 
+        echo "=== AWS env vars ==="
+        env | grep -i AWS_ | sort
+        echo "=== Atmos credential files ==="
+        ls -la ~/.config/atmos/aws/ 2>/dev/null || echo "No atmos credential dir"
+        cat ~/.config/atmos/aws/*/credentials 2>/dev/null || echo "No credentials file"
+
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
         -owner "${{ github.repository_owner }}" \
