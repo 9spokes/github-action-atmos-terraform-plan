@@ -397,6 +397,12 @@ runs:
         echo "=== Generated backend config ==="
         cat ./${{ steps.vars.outputs.component_path }}/backend.tf.json 2>/dev/null || echo "No backend.tf.json yet"
 
+        echo "=== Credential file content (masked) ==="
+        sed 's/\(aws_.*=\).*/\1 ***REDACTED***/' /home/runner/.config/atmos/nsp/aws/github-oidc/credentials
+
+        echo "=== Config file content ==="
+        cat /home/runner/.config/atmos/nsp/aws/github-oidc/config
+
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
         -owner "${{ github.repository_owner }}" \
