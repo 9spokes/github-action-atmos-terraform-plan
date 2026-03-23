@@ -116,6 +116,7 @@ runs:
 #        install-wrapper: false
 
     - name: Build Atmos from fork
+      shell: bash
       run: |
         git clone https://github.com/9spokes/atmos.git /tmp/atmos
         cd /tmp/atmos
@@ -125,6 +126,7 @@ runs:
         chmod +x $HOME/atmos
         echo "$HOME" >> $GITHUB_PATH
         export ATMOS_CLI_PATH=$HOME/atmos
+        $HOME/atmos version
 
     - name: Get atmos settings
       id: atmos-settings
