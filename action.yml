@@ -114,16 +114,17 @@ runs:
 #        atmos-version: ${{ inputs.atmos-version }}
 #        token: ${{ inputs.token }}
 #        install-wrapper: false
+
     - name: Build Atmos from fork
       run: |
         git clone https://github.com/9spokes/atmos.git /tmp/atmos
         cd /tmp/atmos
         git checkout fix_auth_chain
         make build VERSION=1.209.0-fix-auth-cache
-#        sudo cp ./build/atmos /usr/local/bin/atmos
-        cp ./build/atmos ${HOME}/atmos
-        export ATMOS_CLI_PATH=${HOME}/atmos
-        ${HOME}/atmos version
+        cp ./build/atmos $HOME/atmos
+        chmod +x $HOME/atmos
+        echo "$HOME" >> $GITHUB_PATH
+        export ATMOS_CLI_PATH=$HOME/atmos
 
     - name: Get atmos settings
       id: atmos-settings
