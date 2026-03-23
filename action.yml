@@ -364,6 +364,8 @@ runs:
         if [[ "${{ inputs.atmos-pro-upload-status }}" == "true" ]]; then
           atmos_pro_flags+="--upload-status"
         fi
+
+        rm -rf ~/.config/atmos/nsp/
         
         atmos auth list ${base_cmd}
         atmos auth whoami ${base_cmd} --identity core-artifacts/terraform
