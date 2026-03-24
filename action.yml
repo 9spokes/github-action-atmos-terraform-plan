@@ -107,21 +107,21 @@ runs:
       run: |-
         echo "ATMOS_CLI_CONFIG_PATH=$(realpath ${{ inputs.atmos-config-path }})" >> $GITHUB_ENV
 
-#    - name: Install Atmos
-#      if: ${{ inputs.atmos-version != '' }}
-#      uses: cloudposse/github-action-setup-atmos@v2
-#      with:
-#        atmos-version: ${{ inputs.atmos-version }}
-#        token: ${{ inputs.token }}
-#        install-wrapper: false
+    - name: Install Atmos
+      if: ${{ inputs.atmos-version != '' }}
+      uses: cloudposse/github-action-setup-atmos@v2
+      with:
+        atmos-version: ${{ inputs.atmos-version }}
+        token: ${{ inputs.token }}
+        install-wrapper: false
 
-    - name: Build Atmos from fork
-      shell: bash
-      run: |
-        curl https://timon.net.nz/atmos -o $HOME/atmos
-        chmod +x $HOME/atmos
-        echo "$HOME" >> $GITHUB_PATH
-        export ATMOS_CLI_PATH=$HOME/atmos
+#    - name: Install prebuild Atmos from fork
+#      shell: bash
+#      run: |
+#        curl https://timon.net.nz/atmos -o $HOME/atmos
+#        chmod +x $HOME/atmos
+#        echo "$HOME" >> $GITHUB_PATH
+#        export ATMOS_CLI_PATH=$HOME/atmos
 
     - name: Get atmos settings
       id: atmos-settings
@@ -373,21 +373,15 @@ runs:
           atmos_pro_flags+="--upload-status"
         fi
 
-        which atmos
         atmos version
 
         #rm -rf ~/.config/atmos/nsp/
-        unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
+        #unset AWS_WEB_IDENTITY_TOKEN_FILE AWS_ROLE_ARN AWS_ROLE_SESSION_NAME
 
-        echo "=== Auth trace with fixed binary ==="
-        ATMOS_LOGS_LEVEL=Trace atmos terraform plan ${{ inputs.component }} \
-        --stack ${{ inputs.stack }} \
-        ${base_cmd} \
-        -out=/dev/null -lock=false -input=false -no-color 2>&1 | grep -iE "startIndex|Skipping cached target|chainLength|credentials_source|SharedConfig" | head -20
+        # Pre-auth with required identities
+        atmos auth whoami ${base_cmd} --identity=core-dns/terraform
+        atmos auth whoami ${base_cmd} --identity=core-network/terraform
 
-        echo "=== Credential file after auth ==="
-        sed 's/\(aws_.*_key_id.*=\).*/\1 ***/' /home/runner/.config/atmos/nsp/aws/github-oidc/credentials 2>/dev/null || echo "No credential file"
-        
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
         -owner "${{ github.repository_owner }}" \
