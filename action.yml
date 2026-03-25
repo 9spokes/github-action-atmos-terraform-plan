@@ -383,8 +383,9 @@ runs:
         atmos auth whoami ${base_cmd} --identity=core-network/terraform
 
         # Debug
-        atmos auth exec ${base_cmd} --identity=core-auto/terraform -- aws sts get-caller-identity
-        atmos auth exec ${base_cmd} --identity=core-auto/terraform -- aws eks get-token --cluster-name nsp-core-apse2-auto-eks-cluster | jq -r '.status.token' | cut -d. -f2 | base64 -d 2>/dev/null | jq .
+        #export ATMOS_PROFILE=${{ inputs.atmos-profile }}
+        atmos auth exec --identity=core-auto/terraform -- aws sts get-caller-identity
+        atmos auth exec --identity=core-auto/terraform -- aws eks get-token --cluster-name nsp-core-apse2-auto-eks-cluster | jq -r '.status.token' | cut -d. -f2 | base64 -d 2>/dev/null | jq .
 
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
