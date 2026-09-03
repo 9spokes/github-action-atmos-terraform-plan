@@ -107,8 +107,32 @@ runs:
       run: |-
         echo "ATMOS_CLI_CONFIG_PATH=$(realpath ${{ inputs.atmos-config-path }})" >> $GITHUB_ENV
 
-    - name: Install Atmos
+    # Self-hosted runner images may already carry the requested atmos (9spokes:
+    # components/docker/actions-runner-dind bakes it). setup-atmos paginates every
+    # cloudposse/atmos release before it even looks at the tool cache, so a cache
+    # hit still costs ~25 s per job; skip the step entirely when the binary on
+    # PATH is the exact version asked for. Anything else (no atmos, a different
+    # version, "latest", a range) falls through to today's behaviour.
+    - name: Detect atmos already on the runner
+      id: baked-atmos
       if: ${{ inputs.atmos-version != '' }}
+      shell: bash
+      run: |
+        want="${{ inputs.atmos-version }}"; want="${want#v}"
+        have=""
+        if command -v atmos >/dev/null 2>&1; then
+          have="$(atmos version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+        fi
+        if [[ -n "$have" && "$have" == "$want" ]]; then
+          echo "atmos $have already on PATH ($(command -v atmos)); skipping setup-atmos"
+          echo "present=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "atmos on PATH: '${have:-none}', requested: $want; installing"
+          echo "present=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Install Atmos
+      if: ${{ inputs.atmos-version != '' && steps.baked-atmos.outputs.present != 'true' }}
       uses: cloudposse/github-action-setup-atmos@v2
       with:
         atmos-version: ${{ inputs.atmos-version }}
@@ -249,7 +273,43 @@ runs:
           cat aqua.yaml
         fi
 
+    # Same idea for the aqua packages: when every package aqua.yaml names already
+    # exists in the runner's aqua root, the 200+ MB cache restore is pure cost and
+    # `aqua i -l` only has to create symlinks. `aqua which` resolves the package
+    # path from the registry without downloading the package (measured: root dir
+    # stays at the registry's ~3 MB), so it is a safe presence probe.
+    - name: Detect aqua packages already on the runner
+      id: baked-aqua
+      shell: bash
+      env:
+        AQUA_CONFIG: aqua.yaml
+      run: |
+        present=false
+        if command -v aqua >/dev/null 2>&1; then
+          present=true
+          # package name -> command it provides
+          while read -r pkg; do
+            case "$pkg" in
+              suzuki-shunsuke/tfcmt) cmd=tfcmt ;;
+              opentofu/opentofu)     cmd=tofu ;;
+              hashicorp/terraform)   cmd=terraform ;;
+              *) echo "unknown package $pkg, cannot probe; will restore cache"; present=false; continue ;;
+            esac
+            path="$(aqua which "$cmd" 2>/dev/null || true)"
+            if [[ -n "$path" && -x "$path" ]]; then
+              echo "$cmd present: $path"
+            else
+              echo "$cmd missing (${path:-unresolved})"
+              present=false
+            fi
+          done < <(sed -nE 's/^\s*-\s*name:\s*([^@]+)@.*$/\1/p' aqua.yaml)
+        else
+          echo "aqua not on PATH; will restore cache and install"
+        fi
+        echo "present=$present" >> "$GITHUB_OUTPUT"
+
     - name: Cache Aqua
+      if: ${{ steps.baked-aqua.outputs.present != 'true' }}
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: ~/.local/share/aquaproj-aqua
@@ -261,6 +321,9 @@ runs:
       uses: aquaproj/aqua-installer@5e54e5cee8a95ee2ce7c04cb993da6dfad13e59c # v3.1.2
       with:
         aqua_version: v2.50.0
+        # When the packages are baked, the runner's own aqua is the one that
+        # installed them; reuse it instead of downloading another copy.
+        skip_install_aqua: ${{ steps.baked-aqua.outputs.present == 'true' }}
       env:
         AQUA_CONFIG: aqua.yaml
         AQUA_LOG_LEVEL: debug
