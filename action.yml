@@ -413,6 +413,7 @@ runs:
         ATMOS_PRO_BASE_URL: ${{ inputs.atmos-pro-base-url }}
         ATMOS_PROFILE: ${{ inputs.atmos-profile }}
         TFCMT_GITHUB_TOKEN: ${{ inputs.token }}
+        GITHUB_OIDC_AUDIENCE: ${{ inputs.github-oidc-audience }}
       run: |
         # Verify tfcmt is installed
         # Since we disable exit on error, the real error will be swallowed later on
@@ -448,12 +449,12 @@ runs:
         source "${GITHUB_ACTION_PATH}/scripts/github-oidc-prefetch.sh"
 
         # Pre-auth with required identities
-        github_oidc_prefetch "${{ inputs.github-oidc-audience }}"
+        github_oidc_prefetch "${GITHUB_OIDC_AUDIENCE}"
         atmos auth whoami ${base_cmd} --identity=core-auto/terraform
         atmos auth whoami ${base_cmd} --identity=core-dns/terraform
         atmos auth whoami ${base_cmd} --identity=core-network/terraform
 
-        github_oidc_prefetch "${{ inputs.github-oidc-audience }}"
+        github_oidc_prefetch "${GITHUB_OIDC_AUDIENCE}"
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
         -owner "${{ github.repository_owner }}" \
