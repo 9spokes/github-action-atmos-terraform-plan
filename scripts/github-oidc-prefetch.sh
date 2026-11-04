@@ -11,17 +11,20 @@
 #
 # Usage: github_oidc_prefetch <audience>
 # The audience must equal auth.providers.<github/oidc provider>.spec.audience: atmos does not
-# check it against the JWT. An empty audience, or no id-token: write permission, skips the
-# fetch and leaves atmos to fetch the token itself.
+# check it against the JWT. An empty audience, or no id-token: write permission, changes
+# nothing and leaves atmos to fetch the token itself.
 
 github_oidc_prefetch() {
   local aud="${1:-}" attempt body tok payload claims exp iat
   local max_attempts="${GITHUB_OIDC_PREFETCH_ATTEMPTS:-5}"
 
-  # Never hand atmos a JWT left over from an earlier invocation: it may have expired.
-  unset ACTIONS_ID_TOKEN
-
   [[ -n "$aud" && -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" && -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]] || return 0
+
+  # Never hand atmos a JWT this function exported for an earlier invocation: it may have
+  # expired. A token the caller set is left alone unless a fresh one replaces it.
+  if [[ -n "${GITHUB_OIDC_PREFETCHED_TOKEN:-}" && "${ACTIONS_ID_TOKEN:-}" == "$GITHUB_OIDC_PREFETCHED_TOKEN" ]]; then
+    unset ACTIONS_ID_TOKEN
+  fi
 
   for (( attempt = 1; attempt <= max_attempts; attempt++ )); do
     if body=$(curl -sS --fail --connect-timeout 5 --max-time 15 \
@@ -34,6 +37,7 @@ github_oidc_prefetch() {
       if [[ -n "$tok" ]]; then
         echo "::add-mask::${tok}"
         export ACTIONS_ID_TOKEN="$tok"
+        GITHUB_OIDC_PREFETCHED_TOKEN="$tok"
         # Log the lifetime (exp - iat). Nothing below may fail the step: it runs under set -e.
         payload=$(cut -d. -f2 <<<"$tok" | tr '_-' '/+') || payload=""
         while (( ${#payload} % 4 )); do payload+="="; done
