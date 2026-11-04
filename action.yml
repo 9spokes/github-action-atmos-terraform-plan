@@ -78,6 +78,13 @@ inputs:
     description: Atmos auth identity
     required: false
     default: ""
+  github-oidc-audience:
+    description: >-
+      Audience of the GitHub OIDC token fetched (with retries) before each atmos command and
+      passed to atmos as ACTIONS_ID_TOKEN. Must match the github/oidc provider's spec.audience
+      in atmos auth config. Set to an empty string to let atmos fetch the token itself.
+    required: false
+    default: "sts.amazonaws.com"
 outputs:
   summary:
     description: "Summary"
@@ -438,11 +445,15 @@ runs:
 
         atmos version
 
+        source "${GITHUB_ACTION_PATH}/scripts/github-oidc-prefetch.sh"
+
         # Pre-auth with required identities
+        github_oidc_prefetch "${{ inputs.github-oidc-audience }}"
         atmos auth whoami ${base_cmd} --identity=core-auto/terraform
         atmos auth whoami ${base_cmd} --identity=core-dns/terraform
         atmos auth whoami ${base_cmd} --identity=core-network/terraform
 
+        github_oidc_prefetch "${{ inputs.github-oidc-audience }}"
         tfcmt \
         --config ${GITHUB_ACTION_PATH}/config/summary.yaml \
         -owner "${{ github.repository_owner }}" \
