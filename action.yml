@@ -451,7 +451,9 @@ runs:
         # Pre-auth with required identities
         github_oidc_prefetch "${GITHUB_OIDC_AUDIENCE}"
         atmos auth whoami ${base_cmd} --identity=core-auto/terraform
+        github_oidc_prefetch "${GITHUB_OIDC_AUDIENCE}"
         atmos auth whoami ${base_cmd} --identity=core-dns/terraform
+        github_oidc_prefetch "${GITHUB_OIDC_AUDIENCE}"
         atmos auth whoami ${base_cmd} --identity=core-network/terraform
 
         github_oidc_prefetch "${GITHUB_OIDC_AUDIENCE}"
