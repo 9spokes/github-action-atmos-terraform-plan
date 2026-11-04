@@ -11,14 +11,15 @@
 #
 # Usage: github_oidc_prefetch <audience>
 # The audience must equal auth.providers.<github/oidc provider>.spec.audience: atmos does not
-# check it against the JWT. An empty audience, or no id-token: write permission, changes
-# nothing and leaves atmos to fetch the token itself.
+# check it against the JWT. An empty audience, no id-token: write permission, or a request URL
+# that is not https:// (atmos rejects those too) changes nothing and leaves atmos to fetch the
+# token itself.
 
 github_oidc_prefetch() {
   local aud="${1:-}" attempt body tok payload claims exp iat
   local max_attempts="${GITHUB_OIDC_PREFETCH_ATTEMPTS:-5}"
 
-  [[ -n "$aud" && -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" && -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]] || return 0
+  [[ -n "$aud" && -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" && "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" == https://* ]] || return 0
 
   # Never hand atmos a JWT this function exported for an earlier invocation: it may have
   # expired. A token the caller set is left alone unless a fresh one replaces it.
@@ -39,15 +40,16 @@ github_oidc_prefetch() {
         export ACTIONS_ID_TOKEN="$tok"
         GITHUB_OIDC_PREFETCHED_TOKEN="$tok"
         # Log the lifetime (exp - iat). Nothing below may fail the step: it runs under set -e.
+        # The audience is caller input, so it is never echoed: it could carry a workflow command.
         payload=$(cut -d. -f2 <<<"$tok" | tr '_-' '/+') || payload=""
         while (( ${#payload} % 4 )); do payload+="="; done
         claims=$(base64 -d <<<"$payload" 2>/dev/null) || claims=""
         exp=$(grep -oE '"exp"[[:space:]]*:[[:space:]]*[0-9]+' <<<"$claims" | grep -oE '[0-9]+$') || exp=""
         iat=$(grep -oE '"iat"[[:space:]]*:[[:space:]]*[0-9]+' <<<"$claims" | grep -oE '[0-9]+$') || iat=""
         if [[ -n "$exp" && -n "$iat" ]]; then
-          echo "GitHub OIDC JWT prefetched for audience ${aud} (attempt ${attempt}, lifetime $(( exp - iat ))s)"
+          echo "GitHub OIDC JWT prefetched (attempt ${attempt}, lifetime $(( exp - iat ))s)"
         else
-          echo "GitHub OIDC JWT prefetched for audience ${aud} (attempt ${attempt})"
+          echo "GitHub OIDC JWT prefetched (attempt ${attempt})"
         fi
         return 0
       fi
