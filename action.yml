@@ -721,10 +721,11 @@ runs:
       if: ${{ (fromJson(steps.atmos-settings.outputs.settings).github-actions-enabled || fromJson(steps.atmos-settings.outputs.settings).atmos-pro-enabled) && inputs.drift-detection-mode-enabled == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        # One name per stack and component, the same on every attempt: a re-run of a failed job replaces its
-        # earlier result instead of adding a second artifact with the same metadata file. A random suffix left
-        # both, and cloudposse/github-action-atmos-terraform-drift-detection downloads every "metadata-*"
-        # artifact into one directory, so the two copies of <slug>.metadata.json overwrote each other.
+        # One name per stack and component, the same on every attempt. A re-run of a failed job still adds a
+        # second artifact (overwrite only sees artifacts of the current job run, and a re-run is a new one), but
+        # under the same name, so cloudposse/github-action-atmos-terraform-drift-detection's
+        # listArtifacts({latest: true}) downloads only the newest. With a random suffix it downloaded both into
+        # one directory, and the two copies of <slug>.metadata.json overwrote each other.
         name: metadata-${{ github.run_id }}-${{ steps.vars.outputs.component_slug }}
         path: metadata
         overwrite: true
