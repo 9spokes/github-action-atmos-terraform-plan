@@ -315,14 +315,20 @@ runs:
         fi
         echo "present=$present" >> "$GITHUB_OUTPUT"
 
-    - name: Cache Aqua
+    # Caches are restored on every event but saved only on push, schedule and
+    # workflow_dispatch, where the code that ran belongs to the ref whose cache
+    # scope receives the save. A pull_request_target plan runs PR code but saves
+    # into the default branch's scope, which later plans and applies restore.
+    # Bump the key prefix whenever entries from before this rule must be dropped.
+    - name: Restore Aqua cache
+      id: aqua-cache
       if: ${{ steps.baked-aqua.outputs.present != 'true' }}
-      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: ~/.local/share/aquaproj-aqua
-        key: v2-aqua-installer-${{runner.os}}-${{runner.arch}}-${{hashFiles('aqua.yaml')}}
+        key: v3-aqua-installer-${{runner.os}}-${{runner.arch}}-${{hashFiles('aqua.yaml')}}
         restore-keys: |
-          v2-aqua-installer-${{runner.os}}-${{runner.arch}}-
+          v3-aqua-installer-${{runner.os}}-${{runner.arch}}-
 
     - name: Install dependencies with Aqua
       uses: aquaproj/aqua-installer@5e54e5cee8a95ee2ce7c04cb993da6dfad13e59c # v3.1.2
@@ -371,7 +377,7 @@ runs:
         COMPONENT_CACHE_PATH=$(realpath ${{ fromJson(steps.atmos-settings.outputs.settings).component-path }})
         COMPONENT_NAME=$(echo "${{ inputs.component }}" | sed 's#/#_#g')
         COMPONENT_SLUG="$STACK_NAME-$COMPONENT_NAME"
-        COMPONENT_CACHE_KEY=$(basename "${{ fromJson(steps.atmos-settings.outputs.settings).component-path }}")
+        COMPONENT_CACHE_KEY="v2-terraform-dir-$(basename "${{ fromJson(steps.atmos-settings.outputs.settings).component-path }}")"
         PLAN_FILE="$( realpath ${COMPONENT_PATH})/$COMPONENT_SLUG-${{ inputs.sha }}.planfile"
         PLAN_FILE_JSON="$( realpath ${COMPONENT_PATH})/$COMPONENT_SLUG-${{ inputs.sha }}.planfile.json"
         LOCK_FILE="$( realpath ${COMPONENT_PATH})/.terraform.lock.hcl"
@@ -396,9 +402,9 @@ runs:
         echo "step_summary_file=${STEP_SUMMARY_FILE}" >> $GITHUB_OUTPUT
         echo "issue_file=${ISSUE_SUMMARY_FILE}" >> $GITHUB_OUTPUT
 
-    - name: Cache .terraform
+    - name: Restore .terraform cache
       id: cache
-      uses: actions/cache@v4
+      uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       if: ${{ fromJson(steps.atmos-settings.outputs.settings).github-actions-enabled || fromJson(steps.atmos-settings.outputs.settings).atmos-pro-enabled }}
       with:
         path: |
@@ -555,6 +561,23 @@ runs:
           cd "${{ steps.vars.outputs.component_path }}"
           ${{ fromJson(steps.atmos-settings.outputs.settings).command }} show -json "${{ steps.vars.outputs.plan_file }}" > "${{ steps.vars.outputs.plan_file }}.json"
         fi
+
+    # Saves run after the plan so they capture modules init fetched and aqua
+    # packages downloaded on first use. Trusted events only: see "Restore Aqua cache".
+    - name: Save .terraform cache
+      if: ${{ steps.cache.outcome == 'success' && steps.cache.outputs.cache-hit != 'true' && steps.atmos-plan.outputs.result == '0' && contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) }}
+      uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      with:
+        path: |
+          ${{ steps.vars.outputs.component_cache_path }}/.terraform
+        key: ${{ steps.vars.outputs.cache-key }}
+
+    - name: Save Aqua cache
+      if: ${{ steps.aqua-cache.outcome == 'success' && steps.aqua-cache.outputs.cache-hit != 'true' && contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) }}
+      uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      with:
+        path: ~/.local/share/aquaproj-aqua
+        key: v3-aqua-installer-${{runner.os}}-${{runner.arch}}-${{hashFiles('aqua.yaml')}}
 
     - name: Configure State AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
